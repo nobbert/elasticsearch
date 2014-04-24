@@ -5,6 +5,7 @@ RUN yum install -y wget tar gzip
 
 # Install JDK
 ADD jdk-7u51-linux-x64.rpm /root/install/jdk-linux-x64.rpm
+ADD elasticsearch.yml /root/install/elasticsearch.yml
 RUN rpm -Uvh /root/install/jdk-linux-x64.rpm
 ENV JAVA_HOME /usr/java/default
 
