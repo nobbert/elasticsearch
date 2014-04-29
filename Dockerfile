@@ -15,21 +15,23 @@ ENV es.discovery.zen.ping.multicast.enabled true
 RUN yum install -y wget tar gzip java-1.7.0-openjdk-devel 
 ENV JAVA_HOME /usr/lib/jvm/java-1.7.0-openjdk.x86_64
 
-# Install elasticsearch into /opt/elasticsearch
-RUN wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.1.1.tar.gz -P /root/install/
-RUN tar xzf /root/install/elasticsearch-1.1.1.tar.gz -C /opt
-RUN mv /opt/elasticsearch-1.1.1 /opt/elasticsearch
+# Install elasticsearch 
+RUN rpm --import http://packages.elasticsearch.org/GPG-KEY-elasticsearch
+ADD elasticsearch.repo /etc/yum.repos.d/elasticsearch.repo
+RUN yum -y install elasticsearch
+# Remove background option from service start script so container won't exit when elasticsearch starts
+RUN sed -i 's/$exec -p $pidfile -d -Des.default/$exec -p $pidfile -Des.default/' /etc/init.d/elasticsearch 
 
 # Add configuration file to pick up environment variables for elasticsearch settings
 ADD elasticsearch.yml /root/install/elasticsearch.yml
-RUN cp /root/install/elasticsearch.yml /opt/elasticsearch/config/
+RUN cp /root/install/elasticsearch.yml /etc/elasticsearch/
 
 #Install useful plugins
-RUN /opt/elasticsearch/bin/plugin -install lmenezes/elasticsearch-kopf 
-RUN /opt/elasticsearch/bin/plugin -i elasticsearch/marvel/latest
+RUN /usr/share/elasticsearch/bin/plugin -install lmenezes/elasticsearch-kopf 
+RUN /usr/share/elasticsearch/bin/plugin -i elasticsearch/marvel/latest
 
 # Expose elasticsearch ports
 EXPOSE 9200
 EXPOSE 9300
 
-ENTRYPOINT ["/opt/elasticsearch/bin/elasticsearch"]
+ENTRYPOINT ["/usr/share/elasticsearch/bin/elasticsearch", "-p /var/run/elasticsearch/elasticsearch.pid", "-Des.default.path.home=/usr/share/elasticsearch", "-Des.default.path.logs=/var/log/elasticsearch", "-Des.default.path.data=/var/lib/elasticsearch", "-Des.default.path.work=/tmp/elasticsearch", "-Des.default.path.conf=/etc/elasticsearch"]
